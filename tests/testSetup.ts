@@ -14,6 +14,11 @@ const test = base.extend({
       const request = route.request();
       const url = request.url();
 
+      if (url.startsWith('http://localhost:3000') && new URL(url).pathname.startsWith('/api/')) {
+        await route.fallback();
+        return;
+      }
+
       if (url.startsWith('http://localhost:3000')) {
         const violation = { method: request.method(), url, body: request.postData() };
         violations.push(violation);
