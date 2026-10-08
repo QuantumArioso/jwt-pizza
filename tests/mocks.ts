@@ -86,6 +86,11 @@ export async function basicInit(page: Page) {
     await route.fulfill({ json: [franchiseeFranchise] });
   });
 
+  await page.route('**/api/franchise/franchise-1', async (route) => {
+    expect(route.request().method()).toBe('DELETE');
+    await route.fulfill({ json: {} });
+  });
+
   await page.route('**/api/user/me', async (route) => {
     expect(route.request().method()).toBe('GET');
     await route.fulfill({ json: loggedInUser });
