@@ -2,12 +2,12 @@ import { Page } from '@playwright/test';
 import { test, expect } from 'playwright-test-coverage';
 import { FranchiseList, Menu, Order, OrderResponse, Role, Store, User } from '../src/service/pizzaService';
 
-export async function basicInit(page: Page) {
+export async function basicInit(page: Page, userOverrides: Record<string, Partial<User>> = {}) {
   let loggedInUser: User | undefined;
   const validUsers: Record<string, User> = {
-    'd@jwt.com': { id: '3', name: 'Kai Chen', email: 'd@jwt.com', password: 'diner', roles: [{ role: Role.Diner }] },
-    'a@jwt.com': { id: '1', name: 'Admin', email: 'a@jwt.com', password: 'admin', roles: [{ role: Role.Admin }] },
-    'f@jwt.com': { id: '2', name: 'Franchisee', email: 'f@jwt.com', password: 'franchisee', roles: [{ role: Role.Franchisee, objectId: 'franchise-1' }] },
+    'd@jwt.com': { id: '3', name: 'Kai Chen', email: 'd@jwt.com', password: 'diner', roles: [{ role: Role.Diner }], ...userOverrides['d@jwt.com'] },
+    'a@jwt.com': { id: '1', name: 'Admin', email: 'a@jwt.com', password: 'admin', roles: [{ role: Role.Admin }], ...userOverrides['a@jwt.com'] },
+    'f@jwt.com': { id: '2', name: 'Franchisee', email: 'f@jwt.com', password: 'franchisee', roles: [{ role: Role.Franchisee, objectId: 'franchise-1' }], ...userOverrides['f@jwt.com'] },
   };
   const menu: Menu = [{ id: 't1ihu9owlq', title: 'test pizza', description: 'A test pizza', image: '/test-pizza.jpg', price: 10 }];
   const franchises: FranchiseList = {
@@ -45,6 +45,7 @@ export async function basicInit(page: Page) {
       loggedInUser = user;
     } else {
       loggedInUser = { id: '4', name: authReq.name, email: authReq.email, password: authReq.password, roles: [{ role: Role.Diner }] };
+      validUsers[authReq.email] = loggedInUser;
     }
     const loginRes = {
       user: loggedInUser,
@@ -94,6 +95,25 @@ export async function basicInit(page: Page) {
   await page.route('**/api/user/me', async (route) => {
     expect(route.request().method()).toBe('GET');
     await route.fulfill({ json: loggedInUser });
+  });
+
+  await page.route('**/api/user/*', async (route) => {
+    const request = route.request();
+    if (request.method() !== 'PUT') {
+      await route.fallback();
+      return;
+    }
+
+    const updatedUser = request.postDataJSON() as User;
+    const existingUser = loggedInUser;
+    if (existingUser?.email) {
+      delete validUsers[existingUser.email];
+    }
+    loggedInUser = { ...existingUser, ...updatedUser };
+    if (loggedInUser.email) {
+      validUsers[loggedInUser.email] = loggedInUser;
+    }
+    await route.fulfill({ json: { user: loggedInUser, token: 'abcdef' } });
   });
 
   await page.route('**/api/order', async (route) => {

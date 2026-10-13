@@ -1,6 +1,8 @@
-import { test, expect } from 'playwright-test-coverage';
+import { test, expect } from './testSetup';
+import { basicInit } from './mocks';
 
 test('updateUser', async ({ page }) => {
+  await basicInit(page);
   const email = `user${Math.floor(Math.random() * 10000)}@jwt.com`;
   await page.goto('/');
   await page.getByRole('link', { name: 'Register' }).click();
@@ -43,6 +45,9 @@ test('updateUser', async ({ page }) => {
 });
 
 test('update email and password', async ({ page }) => {
+  await basicInit(page, {
+    'd@jwt.com': { name: 'pizza diner' },
+  });
   await page.goto('http://localhost:5173/');
   await page.getByRole('link', { name: 'Login' }).click();
   await page.getByRole('textbox', { name: 'Email address' }).fill('d@jwt.com');
@@ -73,6 +78,10 @@ test('update email and password', async ({ page }) => {
 });
 
 test('changing user info using different roles', async ({ page }) => {
+  await basicInit(page, {
+    'a@jwt.com': { name: '常' },
+    'f@jwt.com': { name: 'pizza franchisee' },
+  });
   await page.goto('http://localhost:5173/');
   await page.getByRole('link', { name: 'Login' }).click();
   await page.getByRole('textbox', { name: 'Email address' }).fill('a@jwt.com');
