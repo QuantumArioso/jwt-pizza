@@ -73,7 +73,15 @@ class HttpPizzaService implements PizzaService {
   async getUsers(page: number = 0, limit: number = 10, nameFilter: string = '*'): Promise<UserList> {
     const queryName = nameFilter && nameFilter !== '*' ? `*${nameFilter}*` : '*';
     const response = await this.callEndpoint(`/api/user?page=${page}&limit=${limit}&name=${encodeURIComponent(queryName)}`);
-    return Array.isArray(response) ? { users: response, more: false } : { users: response.users ?? [], more: !!response.more };
+    const allUsers = Array.isArray(response) ? response : response.users ?? [];
+    const normalizedFilter = nameFilter === '*' ? '' : nameFilter.toLowerCase();
+    const filteredUsers = allUsers.filter((user: User) => user.name?.toLowerCase().includes(normalizedFilter));
+    const responseIsOversized = filteredUsers.length > limit;
+    const start = responseIsOversized ? page * limit : 0;
+    const users = responseIsOversized ? filteredUsers.slice(start, start + limit) : filteredUsers;
+    const more = responseIsOversized ? start + limit < filteredUsers.length : !Array.isArray(response) && !!response.more;
+
+    return { users, more };
   }
 
   async getMenu(): Promise<Menu> {

@@ -108,7 +108,13 @@ export async function basicInit(page: Page, userOverrides: Record<string, Partia
     const page = Number(url.searchParams.get('page') ?? 0);
     const limit = Number(url.searchParams.get('limit') ?? 10);
     const nameFilter = (url.searchParams.get('name') ?? '*').replace(/\*/g, '').toLowerCase();
-    const users = Object.values(validUsers).filter((user) => !nameFilter || user.name?.toLowerCase().includes(nameFilter));
+    const additionalUsers: User[] = Array.from({ length: 9 }, (_, index) => ({
+      id: `test-user-${index}`,
+      name: `Test user ${index}`,
+      email: `test-user-${index}@jwt.com`,
+      roles: [{ role: Role.Diner }],
+    }));
+    const users = [...Object.values(validUsers), ...additionalUsers].filter((user) => !nameFilter || user.name?.toLowerCase().includes(nameFilter));
     await route.fulfill({ json: { users: users.slice(page * limit, (page + 1) * limit), more: (page + 1) * limit < users.length } });
   });
 

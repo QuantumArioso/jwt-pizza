@@ -31,7 +31,7 @@ export default function AdminDashboard(props: Props) {
     if (Role.isRole(props.user, Role.Admin)) {
       (async () => {
         try {
-          const response = await pizzaService.getUsers(userPage, 2, userNameFilter);
+          const response = await pizzaService.getUsers(userPage, 10, userNameFilter);
           const normalizedFilter = userNameFilter.toLowerCase();
           setUserList({
             ...response,
