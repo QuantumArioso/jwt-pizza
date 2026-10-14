@@ -31,4 +31,7 @@ test('listUsers', async ({ page }) => {
 	await expect(usersTable).toContainText('Kai Chen');
 	await expect(usersTable).not.toContainText('Admin');
 	await expect(usersTable).not.toContainText('Franchisee');
+
+	await page.getByRole('button', { name: 'Delete Kai Chen' }).click();
+	await expect(usersTable).not.toContainText('Kai Chen');
 });

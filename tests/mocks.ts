@@ -120,6 +120,16 @@ export async function basicInit(page: Page, userOverrides: Record<string, Partia
 
   await page.route('**/api/user/*', async (route) => {
     const request = route.request();
+    if (request.method() === 'DELETE') {
+      const userId = new URL(request.url()).pathname.split('/').pop();
+      const user = Object.values(validUsers).find((listedUser) => listedUser.id === userId);
+      if (user?.email) {
+        delete validUsers[user.email];
+      }
+      await route.fulfill({ json: { message: 'user deleted' } });
+      return;
+    }
+
     if (request.method() !== 'PUT') {
       await route.fallback();
       return;

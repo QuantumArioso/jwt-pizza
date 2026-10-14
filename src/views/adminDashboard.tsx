@@ -65,6 +65,11 @@ export default function AdminDashboard(props: Props) {
     setUserNameFilter(filterUserRef.current?.value?.trim() ?? '');
   }
 
+  async function deleteUser(user: User) {
+    await pizzaService.deleteUser(user);
+    setUserList((currentList) => ({ ...currentList, users: currentList.users.filter((listedUser) => listedUser.id !== user.id) }));
+  }
+
   let response = <NotFound />;
   if (Role.isRole(props.user, Role.Admin)) {
     response = (
@@ -155,7 +160,7 @@ export default function AdminDashboard(props: Props) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="uppercase text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
                 <tr>
-                  {['Name', 'Email', 'Role'].map((header) => (
+                  {['Name', 'Email', 'Role', 'Action'].map((header) => (
                     <th key={header} scope="col" className="px-6 py-3 text-center text-xs font-medium">
                       {header}
                     </th>
@@ -168,6 +173,12 @@ export default function AdminDashboard(props: Props) {
                     <td className="px-6 py-3 text-sm text-gray-800">{user.name}</td>
                     <td className="px-6 py-3 text-sm text-gray-800">{user.email}</td>
                     <td className="px-6 py-3 text-sm text-gray-800">{user.roles?.map((role) => role.role).join(', ')}</td>
+                    <td className="px-6 py-3 text-end text-sm font-medium">
+                      <button type="button" aria-label={`Delete ${user.name ?? user.email}`} className="px-2 py-1 text-sm font-semibold rounded-lg border border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800" onClick={() => deleteUser(user)}>
+                        <TrashIcon />
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -179,7 +190,7 @@ export default function AdminDashboard(props: Props) {
                       Filter
                     </button>
                   </td>
-                  <td colSpan={2} className="text-end text-sm font-medium">
+                  <td colSpan={3} className="text-end text-sm font-medium">
                     <button type="button" className="w-24 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-gray border-gray m-1 hover:bg-orange-200 disabled:bg-neutral-300" onClick={() => setUserPage(userPage - 1)} disabled={userPage <= 0}>
                       Previous
                     </button>
