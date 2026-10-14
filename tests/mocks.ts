@@ -97,9 +97,19 @@ export async function basicInit(page: Page, userOverrides: Record<string, Partia
     await route.fulfill({ json: loggedInUser });
   });
 
-  await page.route('**/api/user', async (route) => {
-    expect(route.request().method()).toBe('GET');
-    await route.fulfill({ json: Object.values(validUsers) });
+  await page.route('**/api/user*', async (route) => {
+    const request = route.request();
+    if (request.method() !== 'GET' || new URL(request.url()).pathname !== '/api/user') {
+      await route.fallback();
+      return;
+    }
+
+    const url = new URL(route.request().url());
+    const page = Number(url.searchParams.get('page') ?? 0);
+    const limit = Number(url.searchParams.get('limit') ?? 10);
+    const nameFilter = (url.searchParams.get('name') ?? '*').replace(/\*/g, '').toLowerCase();
+    const users = Object.values(validUsers).filter((user) => !nameFilter || user.name?.toLowerCase().includes(nameFilter));
+    await route.fulfill({ json: { users: users.slice(page * limit, (page + 1) * limit), more: (page + 1) * limit < users.length } });
   });
 
   await page.route('**/api/user/*', async (route) => {

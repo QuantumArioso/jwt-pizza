@@ -15,8 +15,11 @@ export default function AdminDashboard(props: Props) {
   const navigate = useNavigate();
   const [franchiseList, setFranchiseList] = React.useState<FranchiseList>({ franchises: [], more: false });
   const [franchisePage, setFranchisePage] = React.useState(0);
-  const [users, setUsers] = React.useState<User[]>([]);
+  const [userList, setUserList] = React.useState({ users: [] as User[], more: false });
+  const [userPage, setUserPage] = React.useState(0);
   const filterFranchiseRef = React.useRef<HTMLInputElement>(null);
+  const filterUserRef = React.useRef<HTMLInputElement>(null);
+  const [userNameFilter, setUserNameFilter] = React.useState('');
 
   React.useEffect(() => {
     (async () => {
@@ -28,13 +31,18 @@ export default function AdminDashboard(props: Props) {
     if (Role.isRole(props.user, Role.Admin)) {
       (async () => {
         try {
-          setUsers(await pizzaService.getUsers());
+          const response = await pizzaService.getUsers(userPage, 2, userNameFilter);
+          const normalizedFilter = userNameFilter.toLowerCase();
+          setUserList({
+            ...response,
+            users: response.users.filter((user) => user.name?.toLowerCase().includes(normalizedFilter)),
+          });
         } catch {
-          setUsers([]);
+          setUserList({ users: [], more: false });
         }
       })();
     }
-  }, [props.user]);
+  }, [props.user, userPage, userNameFilter]);
 
   function createFranchise() {
     navigate('/admin-dashboard/create-franchise');
@@ -50,6 +58,11 @@ export default function AdminDashboard(props: Props) {
 
   async function filterFranchises() {
     setFranchiseList(await pizzaService.getFranchises(franchisePage, 10, `*${filterFranchiseRef.current?.value}*`));
+  }
+
+  function filterUsers() {
+    setUserPage(0);
+    setUserNameFilter(filterUserRef.current?.value?.trim() ?? '');
   }
 
   let response = <NotFound />;
@@ -150,7 +163,7 @@ export default function AdminDashboard(props: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {users.map((user) => (
+                {userList.users.map((user) => (
                   <tr key={user.id ?? user.email}>
                     <td className="px-6 py-3 text-sm text-gray-800">{user.name}</td>
                     <td className="px-6 py-3 text-sm text-gray-800">{user.email}</td>
@@ -158,6 +171,24 @@ export default function AdminDashboard(props: Props) {
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td className="px-1 py-1">
+                    <input type="text" ref={filterUserRef} name="filterUser" placeholder="Filter users by name" className="px-2 py-1 text-sm border border-gray-300 rounded-lg" />
+                    <button type="button" className="ml-2 px-2 py-1 text-sm font-semibold rounded-lg border border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800" onClick={filterUsers}>
+                      Filter
+                    </button>
+                  </td>
+                  <td colSpan={2} className="text-end text-sm font-medium">
+                    <button type="button" className="w-24 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-gray border-gray m-1 hover:bg-orange-200 disabled:bg-neutral-300" onClick={() => setUserPage(userPage - 1)} disabled={userPage <= 0}>
+                      Previous
+                    </button>
+                    <button type="button" className="w-24 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-gray border-gray m-1 hover:bg-orange-200 disabled:bg-neutral-300" onClick={() => setUserPage(userPage + 1)} disabled={!userList.more}>
+                      Next
+                    </button>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>

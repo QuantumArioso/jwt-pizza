@@ -14,8 +14,17 @@ test('listUsers', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
 	await expect(page.getByRole('main')).toContainText('d@jwt.com');
 	await expect(page.getByRole('main')).toContainText('a@jwt.com');
-	await expect(page.getByRole('main')).toContainText('f@jwt.com');
 	await expect(page.getByRole('main')).toContainText('diner');
 	await expect(page.getByRole('main')).toContainText('admin');
+
+	await page.getByRole('button', { name: 'Next' }).click();
+	await expect(page.getByRole('main')).toContainText('f@jwt.com');
 	await expect(page.getByRole('main')).toContainText('franchisee');
+
+	await page.getByRole('textbox', { name: 'Filter users by name' }).fill('Kai');
+	await page.getByRole('button', { name: 'Filter' }).click();
+	const usersTable = page.getByRole('table').nth(1);
+	await expect(usersTable).toContainText('Kai Chen');
+	await expect(usersTable).not.toContainText('Admin');
+	await expect(usersTable).not.toContainText('Franchisee');
 });
