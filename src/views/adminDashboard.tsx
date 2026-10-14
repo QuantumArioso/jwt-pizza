@@ -15,6 +15,7 @@ export default function AdminDashboard(props: Props) {
   const navigate = useNavigate();
   const [franchiseList, setFranchiseList] = React.useState<FranchiseList>({ franchises: [], more: false });
   const [franchisePage, setFranchisePage] = React.useState(0);
+  const [users, setUsers] = React.useState<User[]>([]);
   const filterFranchiseRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -22,6 +23,18 @@ export default function AdminDashboard(props: Props) {
       setFranchiseList(await pizzaService.getFranchises(franchisePage, 3, '*'));
     })();
   }, [props.user, franchisePage]);
+
+  React.useEffect(() => {
+    if (Role.isRole(props.user, Role.Admin)) {
+      (async () => {
+        try {
+          setUsers(await pizzaService.getUsers());
+        } catch {
+          setUsers([]);
+        }
+      })();
+    }
+  }, [props.user]);
 
   function createFranchise() {
     navigate('/admin-dashboard/create-franchise');
@@ -122,6 +135,31 @@ export default function AdminDashboard(props: Props) {
         </div>
         <div>
           <Button className="w-36 text-xs sm:text-sm sm:w-64" title="Add Franchise" onPress={createFranchise} />
+        </div>
+        <div>
+          <h3 className="text-neutral-100 text-xl mt-8">Users</h3>
+          <div className="bg-neutral-100 overflow-clip my-4">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="uppercase text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
+                <tr>
+                  {['Name', 'Email', 'Role'].map((header) => (
+                    <th key={header} scope="col" className="px-6 py-3 text-center text-xs font-medium">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {users.map((user) => (
+                  <tr key={user.id ?? user.email}>
+                    <td className="px-6 py-3 text-sm text-gray-800">{user.name}</td>
+                    <td className="px-6 py-3 text-sm text-gray-800">{user.email}</td>
+                    <td className="px-6 py-3 text-sm text-gray-800">{user.roles?.map((role) => role.role).join(', ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </View>
     );

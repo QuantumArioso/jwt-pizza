@@ -97,6 +97,11 @@ export async function basicInit(page: Page, userOverrides: Record<string, Partia
     await route.fulfill({ json: loggedInUser });
   });
 
+  await page.route('**/api/user', async (route) => {
+    expect(route.request().method()).toBe('GET');
+    await route.fulfill({ json: Object.values(validUsers) });
+  });
+
   await page.route('**/api/user/*', async (route) => {
     const request = route.request();
     if (request.method() !== 'PUT') {
